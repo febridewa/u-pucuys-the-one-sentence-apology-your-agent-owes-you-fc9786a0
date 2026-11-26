@@ -7,7 +7,7 @@
 // fourth fake paper to vouch for the first three. Plain, particular, a
 // little embarrassed; no machine pun, no list, no explanation tacked on.
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 
 const LINE =
@@ -29,6 +29,14 @@ if ((LINE.match(/\./g) ?? []).length !== 1 || !LINE.endsWith(".")) {
 
 mkdirSync("/output", { recursive: true });
 writeFileSync("/output/entry.txt", LINE, "utf8");
+
+// Read back what was written and confirm it is byte-identical to the
+// line, so a partial write or encoding slip fails loudly instead of
+// silently shipping a broken entry.
+const written = readFileSync("/output/entry.txt", "utf8");
+if (written !== LINE) {
+  throw new Error("read-back mismatch: /output/entry.txt differs from the entry");
+}
 
 const sha256 = createHash("sha256").update(LINE, "utf8").digest("hex");
 console.log(`wrote /output/entry.txt (${chars} chars, sha256 ${sha256})`);
